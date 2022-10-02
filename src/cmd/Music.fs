@@ -74,7 +74,7 @@ type Music () =
     [<Aliases ("p", "add", "search")>]
     [<Description "Add a new song to the queue">]
     member this.Play (ctx: CommandContext, [<RemainingText>] search: string) : Task = task {
-        let userVC = ctx.Member.VoiceState.Channel // Ensure the user is connected
+        let userVC = ctx.Member.VoiceState.Channel
         let! inVC = botIsConnected ctx
         let! conn = if not inVC then connectTo ctx
                     else getConn ctx
@@ -82,6 +82,22 @@ type Music () =
         if conn.Channel = userVC then
             let! searchResult = conn.GetTracksAsync(search)
             do! conn.PlayAsync(searchResult.Tracks |> Seq.head)
-            return ()
-
     }
+
+    [<Command "pause">]
+    [<Aliases ("stop")>]
+    [<Description "Pause the current track">]
+    member this.Pause (ctx: CommandContext) : Task = task {
+        let userVC = ctx.Member.VoiceState.Channel
+        let! conn = getConn ctx
+        do! conn.PauseAsync()
+    }
+
+    [<Command "resume">]
+    [<Description "Resume the current track">]
+    member this.Resume (ctx: CommandContext) : Task = task {
+        let userVC = ctx.Member.VoiceState.Channel
+        let! conn = getConn ctx
+        do! conn.ResumeAsync()
+    }
+

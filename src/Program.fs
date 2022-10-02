@@ -49,12 +49,14 @@ module Program =
         // Connect the client
         client.ConnectAsync()
         |> Async.AwaitTask |> Async.RunSynchronously
+        printfn "Bot connected to discord..."
 
         // Connect to the lavalink server
         lavalink.ConnectAsync(lavalinkConfig)
         |> Async.AwaitTask |> Async.RunSynchronously
         |> ignore
         printfn "Connected to lavalink..."
+
         // Avoid early termination
         Task.Delay(-1)
         |> Async.AwaitTask |> Async.RunSynchronously
