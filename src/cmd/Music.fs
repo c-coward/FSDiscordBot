@@ -86,9 +86,6 @@ type Music () =
             let track = searchResult.Tracks |> Seq.head
             let song = Song (track, ctx.Message)
             do! this.Players.AddTrack(conn, song)
-
-            // if conn.CurrentState.CurrentTrack = null then
-            //     do! this.Players.PlayFrom(conn)
     }
 
     [<Command "pause">]
@@ -122,13 +119,18 @@ type Music () =
     member this.Clear (ctx: CommandContext) : Task = task {
         let userVC = ctx.Member.VoiceState.Channel
         let! conn = this.findConnection ctx
-        if userVC = conn.Channel then
-            this.Players.ClearQueue(conn)
+        if userVC = conn.Channel then this.Players.ClearQueue(conn)
     }
 
-    // [<Command "current">]
-    // [<Aliases ("curr", "now", "playing")>]
-    // [<Description "Get the currently playing track">]
-    // member this.Current (ctx: CommandContext) : Task = task {
-
-    // }
+    [<Command "current">]
+    [<Aliases ("curr", "now", "playing")>]
+    [<Description "Get the currently playing track">]
+    member this.Current (ctx: CommandContext) : Task = task {
+        let! conn = this.findConnection ctx
+        match this.Players.GetCurrentSong(conn) with
+        | Some song ->
+            let embed = DiscordEmbedBuilder()
+            embed.Title <- "Currently Playing"
+            embed.Description <- $"[{song.Track.Title}]({song.Track.Uri}) [{song.Message.Author.Mention}]"
+        | None -> ()
+    }

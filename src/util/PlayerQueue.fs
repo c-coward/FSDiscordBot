@@ -41,14 +41,17 @@ type PlayerQueue () =
             else this.UpdateQueueMessage(conn, song.Message, embed)
     
     member this.PlayFrom (conn: LavalinkGuildConnection) = task {
-        let guild = conn.Guild.Id
-
-        if this.Players.ContainsKey(guild) then
-            let queue = this.Players.Item(guild).Playlist
-            if queue.Count <> 0 then
-                let song = queue.Peek()
-                do! conn.PlayAsync(song.Track)
+        let currentSong = this.GetCurrentSong(conn)
+        match currentSong with
+        | Some (song : Song) -> do! conn.PlayAsync(song.Track)
+        | None -> ()
     }
+
+    member this.GetCurrentSong (conn: LavalinkGuildConnection) =
+        let queue = this.Players.GetValueOrDefault(conn.Guild.Id).Playlist
+        if queue.Count <> 0 then
+            Some (queue.Peek())
+            else None
 
     member this.UpdatePlayMessage (conn: LavalinkGuildConnection, msg: DiscordMessage, embed: DiscordEmbed) = task {
         let player = this.Players.Item(conn.Guild.Id)
@@ -75,11 +78,12 @@ type PlayerQueue () =
     }
 
     member this.AdvanceQueue (conn: LavalinkGuildConnection) =
-        this.Players.Item(conn.Guild.Id).Playlist.Dequeue() |> ignore
+        let queue = this.Players.GetValueOrDefault(conn.Guild.Id).Playlist
+        if queue.Count <> 0 then
+            queue.Dequeue() |> ignore
     
     member this.ClearQueue (conn: LavalinkGuildConnection) =
-        let guild = conn.Guild.Id
-        this.Players.Item(guild).Playlist.Clear()
+        this.Players.GetValueOrDefault(conn.Guild.Id).Playlist.Clear()
     
     member this.DropConnection (conn: LavalinkGuildConnection) = task {
         this.Players.Remove(conn.Guild.Id) |> ignore
