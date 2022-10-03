@@ -45,9 +45,7 @@ type Music () =
         let botVC = bot.VoiceState.Channel
 
         if sameAsAuthor = (userVC = botVC) then
-            this.Players.ClearQueue(conn)
-            do! conn.DisconnectAsync()
-            printfn $"Disconnected from {botVC}"
+            do! this.Players.DropConnection(conn)
     }
 
 
@@ -87,10 +85,10 @@ type Music () =
             let! searchResult = conn.GetTracksAsync(search)
             let track = searchResult.Tracks |> Seq.head
             let song = Song (track, ctx.Message)
-            this.Players.AddTrack(conn, song, ctx.Channel)
+            do! this.Players.AddTrack(conn, song)
 
-            if conn.CurrentState.CurrentTrack = null then
-                do! this.Players.PlayFrom(conn)
+            // if conn.CurrentState.CurrentTrack = null then
+            //     do! this.Players.PlayFrom(conn)
     }
 
     [<Command "pause">]
@@ -99,7 +97,7 @@ type Music () =
     member this.Pause (ctx: CommandContext) : Task = task {
         let userVC = ctx.Member.VoiceState.Channel
         let! conn = this.findConnection ctx
-        do! conn.PauseAsync()
+        if userVC = conn.Channel then do! conn.PauseAsync()
     }
 
     [<Command "resume">]
@@ -107,8 +105,7 @@ type Music () =
     member this.Resume (ctx: CommandContext) : Task = task {
         let userVC = ctx.Member.VoiceState.Channel
         let! conn = this.findConnection ctx
-        if userVC = conn.Channel then
-            do! conn.ResumeAsync()
+        if userVC = conn.Channel then do! conn.ResumeAsync()
     }
 
     [<Command "skip">]
@@ -116,8 +113,7 @@ type Music () =
     member this.Skip (ctx: CommandContext) : Task = task {
         let userVC = ctx.Member.VoiceState.Channel
         let! conn = this.findConnection ctx
-        if userVC = conn.Channel then
-            do! conn.StopAsync()
+        if userVC = conn.Channel then do! conn.StopAsync()
     }
 
     [<Command "clear">]
@@ -129,3 +125,10 @@ type Music () =
         if userVC = conn.Channel then
             this.Players.ClearQueue(conn)
     }
+
+    // [<Command "current">]
+    // [<Aliases ("curr", "now", "playing")>]
+    // [<Description "Get the currently playing track">]
+    // member this.Current (ctx: CommandContext) : Task = task {
+
+    // }
