@@ -7,32 +7,36 @@ open DSharpPlus.CommandsNext
 open DSharpPlus.CommandsNext.Attributes
 open DSharpPlus.Entities
 open DSharpPlus.Lavalink
+open System.Collections.Generic
 
 type Music () =
-
     inherit BaseCommandModule ()
+    
+    member val Players = PlayerQueue ()
 
     (***** HELPER FUNCTIONS *****)
-    let botIsConnected (ctx: CommandContext) = task {
+    member this.botIsConnected (ctx: CommandContext) = task {
         let! bot = ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id)
         return bot.VoiceState <> null
     }
 
-    let connectTo (ctx: CommandContext) = task {
+    member this.connectTo (ctx: CommandContext) = task {
         let userVC = ctx.Member.VoiceState.Channel
         let node = ctx.Client.GetLavalink().ConnectedNodes.Values |> Seq.head
         let! conn = node.ConnectAsync(userVC)
+        printfn $"Connected to {userVC}"
+        conn.add_PlaybackStarted(this.Players.PlaybackStartedEvent)
+        conn.add_PlaybackFinished(this.Players.PlaybackFinishedEvent)
         return conn
     }
 
-    let getConn (ctx: CommandContext) = task {
+    member this.findConnection (ctx: CommandContext) = task {
         let node = ctx.Client.GetLavalink().ConnectedNodes.Values |> Seq.head
         let conn = node.GetGuildConnection(ctx.Guild)
-
         return conn
     }
 
-    let disconnectCurrent (ctx: CommandContext, sameAsAuthor: bool) = task {
+    member this.disconnectCurrent (ctx: CommandContext, sameAsAuthor: bool) = task {
         let node = ctx.Client.GetLavalink().ConnectedNodes.Values |> Seq.head
         let conn = node.GetGuildConnection(ctx.Guild)
 
@@ -41,22 +45,22 @@ type Music () =
         let botVC = bot.VoiceState.Channel
 
         if sameAsAuthor = (userVC = botVC) then
-            conn.DisconnectAsync() |> ignore
+            this.Players.ClearQueue(conn)
+            do! conn.DisconnectAsync()
+            printfn $"Disconnected from {botVC}"
     }
+
 
     [<Command "join">]
     [<Aliases ("j")>]
     [<Description "Join the current voice channel">]
     member this.Join (ctx: CommandContext) : Task = task {
-        let userVC = ctx.Member.VoiceState.Channel
-        let lavalink = ctx.Client.GetLavalink()
-        let node = lavalink.ConnectedNodes.Values |> Seq.head
-        let! inVC = botIsConnected ctx
+        let! inVC = this.botIsConnected ctx
 
         if inVC then
-            do! disconnectCurrent (ctx, false)
+            do! this.disconnectCurrent (ctx, false)
 
-        connectTo ctx |> ignore
+        this.connectTo ctx |> ignore
     }
 
     [<Command "leave">]
@@ -67,21 +71,26 @@ type Music () =
         let! bot = ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id)
         let botCh = bot.VoiceState.Channel
 
-        do! disconnectCurrent (ctx, true)
+        do! this.disconnectCurrent (ctx, true)
     }
 
     [<Command "play">]
-    [<Aliases ("p", "add", "search")>]
+    [<Aliases ("p", "add")>]
     [<Description "Add a new song to the queue">]
     member this.Play (ctx: CommandContext, [<RemainingText>] search: string) : Task = task {
         let userVC = ctx.Member.VoiceState.Channel
-        let! inVC = botIsConnected ctx
-        let! conn = if not inVC then connectTo ctx
-                    else getConn ctx
+        let! inVC = this.botIsConnected ctx
+        let! conn = if not inVC then this.connectTo ctx
+                    else this.findConnection ctx
 
         if conn.Channel = userVC then
             let! searchResult = conn.GetTracksAsync(search)
-            do! conn.PlayAsync(searchResult.Tracks |> Seq.head)
+            let track = searchResult.Tracks |> Seq.head
+            let song = Song (track, ctx.Message)
+            this.Players.AddTrack(conn, song, ctx.Channel)
+
+            if conn.CurrentState.CurrentTrack = null then
+                do! this.Players.PlayFrom(conn)
     }
 
     [<Command "pause">]
@@ -89,7 +98,7 @@ type Music () =
     [<Description "Pause the current track">]
     member this.Pause (ctx: CommandContext) : Task = task {
         let userVC = ctx.Member.VoiceState.Channel
-        let! conn = getConn ctx
+        let! conn = this.findConnection ctx
         do! conn.PauseAsync()
     }
 
@@ -97,7 +106,26 @@ type Music () =
     [<Description "Resume the current track">]
     member this.Resume (ctx: CommandContext) : Task = task {
         let userVC = ctx.Member.VoiceState.Channel
-        let! conn = getConn ctx
-        do! conn.ResumeAsync()
+        let! conn = this.findConnection ctx
+        if userVC = conn.Channel then
+            do! conn.ResumeAsync()
     }
 
+    [<Command "skip">]
+    [<Description "Skip the current track">]
+    member this.Skip (ctx: CommandContext) : Task = task {
+        let userVC = ctx.Member.VoiceState.Channel
+        let! conn = this.findConnection ctx
+        if userVC = conn.Channel then
+            do! conn.StopAsync()
+    }
+
+    [<Command "clear">]
+    [<Aliases ("clr", "skipall")>]
+    [<Description "Clears out the queue">]
+    member this.Clear (ctx: CommandContext) : Task = task {
+        let userVC = ctx.Member.VoiceState.Channel
+        let! conn = this.findConnection ctx
+        if userVC = conn.Channel then
+            this.Players.ClearQueue(conn)
+    }

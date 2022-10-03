@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="src\util\PlayerQueue.fs" />
     <Compile Include="src\cmd\Music.fs" />
     <Compile Include="src\Program.fs" />
   </ItemGroup>
@@ -12,7 +13,6 @@
     <PackageReference Include="DSharpPlus.CommandsNext" Version="4.2.0" />
     <PackageReference Include="DSharpPlus.Interactivity" Version="4.2.0" />
     <PackageReference Include="DSharpPlus.Lavalink" Version="4.2.0" />
-    <PackageReference Include="Lavalink4NET.DSharpPlus" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
