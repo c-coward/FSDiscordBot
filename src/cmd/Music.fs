@@ -24,7 +24,6 @@ type Music () =
         let userVC = ctx.Member.VoiceState.Channel
         let node = ctx.Client.GetLavalink().ConnectedNodes.Values |> Seq.head
         let! conn = node.ConnectAsync(userVC)
-        printfn $"Connected to {userVC}"
         conn.add_PlaybackStarted(this.Players.PlaybackStartedEvent)
         conn.add_PlaybackFinished(this.Players.PlaybackFinishedEvent)
         return conn
@@ -132,5 +131,6 @@ type Music () =
             let embed = DiscordEmbedBuilder()
             embed.Title <- "Currently Playing"
             embed.Description <- $"[{song.Track.Title}]({song.Track.Uri}) [{song.Message.Author.Mention}]"
+            do! this.Players.UpdatePlayMessage(conn, song.Message, embed)
         | None -> ()
     }
