@@ -4,8 +4,8 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="src\util\PlayerQueue.fs" />
-    <Compile Include="src\cmd\Music.fs" />
+    <Compile Include="src\util\*" />
+    <Compile Include="src\cmd\*" />
     <Compile Include="src\Program.fs" />
   </ItemGroup>
   <ItemGroup>

@@ -4,11 +4,13 @@ module Program =
 
     open DSharpPlus
     open DSharpPlus.CommandsNext
+    open DSharpPlus.Interactivity
     open DSharpPlus.Lavalink
     open DSharpPlus.Net
     open Microsoft.Extensions.Configuration
     open System.IO
     open System.Threading.Tasks
+    open MusicBot.Cmd
 
     let appConfig =
         ConfigurationBuilder()
@@ -24,16 +26,16 @@ module Program =
         config.Token <- appConfig.["Token"]
         config.TokenType <- TokenType.Bot
 
-
         // Set up the client commands
         let client = new DiscordClient(config)
-
+        
         let commandsConfig = CommandsNextConfiguration()
         commandsConfig.CaseSensitive <- false
         commandsConfig.StringPrefixes <- ["~"]
 
         let commands = client.UseCommandsNext(commandsConfig)
         commands.RegisterCommands<Music>()
+        commands.RegisterCommands<Dice>()
 
         // Set up the Lavalink connection
         let endpoint = ConnectionEndpoint(
