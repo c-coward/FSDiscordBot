@@ -147,7 +147,9 @@ type Music () =
         if loc = 1 then
             do! this.Skip(ctx, txt)
         else
-            this.Players.RemoveAt(conn, loc)
+            if this.Players.RemoveAt(conn, loc) then 
+                do! ctx.Message.CreateReactionAsync(DiscordEmoji.FromUnicode("⏩"))
+
     }
     [<Command "clear">]
     [<Aliases ("clr", "skipall")>]
@@ -155,6 +157,7 @@ type Music () =
     member this.Clear (ctx: CommandContext, [<RemainingText>] txt: string) : Task = task {
         let! conn = this.verifyConnection (ctx)
         this.Players.ClearQueue(conn)
+        do! conn.StopAsync()
     }
 
     [<Command "current">]

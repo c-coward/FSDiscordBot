@@ -15,10 +15,10 @@ module PlayerQueue =
 
     type PlayerContext () =
         member val Playlist = Queue<Song> () with get, set
-        // member val Channel = channel
         member val PlayMessage : option<DiscordMessage> = None with get, set
         member val QueueMessage : option<DiscordMessage> = None with get, set
         member val QueueListMessage : option<DiscordMessage> = None with get, set
+        member val isPaused : bool = false with get, set
 
     type PlayerMap = Dictionary<uint64, PlayerContext>
 
@@ -134,6 +134,8 @@ module PlayerQueue =
             if loc - 1 <= queue.Count && loc > 0 then
                 let newQueue = queue |> Seq.removeAt (loc - 1) |> Queue<Song>
                 this.Players.GetValueOrDefault(conn.Guild.Id).Playlist <- newQueue
+                true
+            else false
         
         member this.PlaybackStartedEvent : LavalinkGuildConnection -> EventArgs.TrackStartEventArgs -> Task = 
             fun (conn: LavalinkGuildConnection) (args: EventArgs.TrackStartEventArgs) ->

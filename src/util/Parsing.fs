@@ -86,6 +86,10 @@ module Parsing =
     let num = many digit |>> (charListToStr >> int)
 
     let token p = between spaces p spaces
+    let stoken = token << pstring
+
+    let modifier = stoken "+" >>. num
+        
 
     // Dice parsing
     let roll =
@@ -94,5 +98,7 @@ module Parsing =
             (token (choice [pstring "d"; pstring "D"]))
             (token num) >>=
         (fun (count, sides) ->
-            ret [for _ = 1 to count do
-                    yield rand.Next()%sides + 1])
+        choice [modifier; ret 0] >>=
+        (fun (modif) ->
+            ret ([for _ = 1 to count do
+                    yield rand.Next()%sides + 1], modif)))
