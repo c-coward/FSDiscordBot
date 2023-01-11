@@ -1,6 +1,5 @@
 namespace MusicBot.Util
 
-open DSharpPlus.CommandsNext
 open DSharpPlus.Entities
 open DSharpPlus.Lavalink
 open System
