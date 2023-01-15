@@ -6,6 +6,10 @@ open DSharpPlus.CommandsNext
 open DSharpPlus.CommandsNext.Attributes
 open DSharpPlus.Entities
 open DSharpPlus.Lavalink
+open DSharpPlus.Interactivity
+open DSharpPlus.Interactivity.Enums
+open DSharpPlus.Interactivity.Extensions
+
 
 open MusicBot.Util.PlayerQueue
 
@@ -102,7 +106,7 @@ type Music () =
 
         if conn.Channel = userVC then
             let! searchResult = conn.GetTracksAsync(search)
-            printfn $"{searchResult.LoadResultType}"
+            // printfn $"{searchResult.LoadResultType}"
             if searchResult.LoadResultType = LavalinkLoadResultType.PlaylistLoaded then
                 printfn "Adding playlist"
                 for track in searchResult.Tracks do
@@ -171,7 +175,7 @@ type Music () =
         match this.Players.GetCurrentSong(conn) with
         | Some song ->
             embed.Title <- "Currently Playing"
-            embed.Description <- $"[{song.Track.Title}]({song.Track.Uri}) [{song.Message.Author.Mention}] | `{conn.CurrentState.PlaybackPosition |> this.StringTime} / {song.Track.Length |> this.StringTime}`"
+            embed.Description <- this.Players.StringSong(conn, song)
         | None -> 
             embed.Description <- "Not playing anything..."
         do! this.Players.UpdatePlayMessage(conn, ctx.Message, embed)
@@ -183,5 +187,11 @@ type Music () =
     member this.GetQueue (ctx: CommandContext, [<RemainingText>] txt: string) : Task = task {
         let! conn = this.findConnection ctx
         let embed = this.Players.StringQueue(conn)
-        ctx.RespondAsync(embed) |> ignore
+
+        if embed.Title <> null then
+            let interactions = ctx.Client.GetInteractivity()
+            let pages = interactions.GeneratePagesInEmbed(embed.Description, SplitType.Line, embed)
+            ctx.Channel.SendPaginatedMessageAsync(ctx.Member, pages) |> ignore
+        else
+            ctx.RespondAsync(embed) |> ignore
     }

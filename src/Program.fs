@@ -1,13 +1,17 @@
 ﻿namespace MusicBot
 
-module Program =
 
+module Program =
     open DSharpPlus
     open DSharpPlus.CommandsNext
     open DSharpPlus.Interactivity
+    open DSharpPlus.Interactivity.Extensions
+    open DSharpPlus.Interactivity.Enums
+    open DSharpPlus.Interactivity.EventHandling
     open DSharpPlus.Lavalink
     open DSharpPlus.Net
     open Microsoft.Extensions.Configuration
+    open System
     open System.IO
     open System.Threading.Tasks
     open MusicBot.Cmd
@@ -25,6 +29,7 @@ module Program =
         let config = DiscordConfiguration()
         config.Token <- appConfig.["Token"]
         config.TokenType <- TokenType.Bot
+        config.Intents <- DiscordIntents.AllUnprivileged + DiscordIntents.MessageContents
 
         // Set up the client commands
         let client = new DiscordClient(config)
@@ -36,6 +41,17 @@ module Program =
         let commands = client.UseCommandsNext(commandsConfig)
         commands.RegisterCommands<Music>()
         commands.RegisterCommands<Dice>()
+        printfn "Commands registered"
+
+        // Enables interactivity
+        let interactionsConfig = InteractivityConfiguration()
+        interactionsConfig.PollBehaviour <- PollBehaviour.KeepEmojis
+        interactionsConfig.ButtonBehavior <- ButtonPaginationBehavior.DeleteMessage
+        interactionsConfig.AckPaginationButtons <- true
+        interactionsConfig.Timeout <- TimeSpan.FromSeconds(120)
+
+        client.UseInteractivity(interactionsConfig) |> ignore
+        printfn "Interactivity setup"
 
         // Set up the Lavalink connection
         let endpoint = ConnectionEndpoint(

@@ -16,7 +16,6 @@ module PlayerQueue =
         member val Playlist = Queue<Song> () with get, set
         member val PlayMessage : option<DiscordMessage> = None with get, set
         member val QueueMessage : option<DiscordMessage> = None with get, set
-        member val QueueListMessage : option<DiscordMessage> = None with get, set
         member val isPaused : bool = false with get, set
 
     type PlayerMap = Dictionary<uint64, PlayerContext>
@@ -81,29 +80,34 @@ module PlayerQueue =
             if queue.Count <> 0 then
                 Some (queue.Peek())
                 else None
+            
+        member this.StringSong (conn: LavalinkGuildConnection, song: Song) =
+            let current =
+                if conn.CurrentState.CurrentTrack = song.Track
+                    then this.TrackProgress(conn) else ""
+            $"[{song.Track.Title}]({song.Track.Uri}) [{song.Message.Author.Mention}]{current}"
         
+        member this.StringChunk(conn: LavalinkGuildConnection, songs: Song[]) =
+            let strings = [for idx, song in songs |> Seq.zip [1 .. songs.Length]
+                -> $"{idx}: {this.StringSong(conn, song)}"]
+            String.Join("\n", strings)
+
         member this.StringQueue (conn: LavalinkGuildConnection) =
             let queue = this.Players.GetValueOrDefault(conn.Guild.Id).Playlist
-            let embed = DiscordEmbedBuilder()
 
+            // queue |> Seq.chunkBySize 10 |> Seq.map (fun s -> this.StringChunk(conn, s))
+            let embed = DiscordEmbedBuilder()
             embed.Color <- DiscordColor.Purple
             if queue.Count = 0 then
                 embed.Description <- "Nothing queued."
             else
                 embed.Title <- "Current Queue"
-                let trackStrings = [for idx, song in (queue |> Seq.zip [1..10] |> Seq.truncate 10)
-                    ->  let current = if conn.CurrentState.CurrentTrack <> null && idx = 1 then " - `Currently playing`" else ""
-                        in $"{idx}: [{song.Track.Title}]({song.Track.Uri}) [{song.Message.Author.Mention}]{current}"]
-                let trackString = String.Join("\n", trackStrings)
-                let length = queue.Count
-
-                embed.Description <- 
-                    if length > 10 then
-                        trackString + $"\nAnd {length-10} more..."
-                    else trackString
-        
+                let strings = [for idx, song in queue |> Seq.zip [1 .. Seq.length queue]
+                    -> $"{idx}: {this.StringSong(conn, song)}"]
+                            |> fun s -> String.Join("\n", s)
+                embed.Description <- strings
             embed
-        
+
         member this.StringTime (time: TimeSpan) =
             let hours = time.TotalHours |> int
             let minutes = time.Minutes
