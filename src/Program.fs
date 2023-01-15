@@ -1,20 +1,20 @@
 ﻿namespace MusicBot
 
+open DSharpPlus
+open DSharpPlus.SlashCommands
+open DSharpPlus.CommandsNext
+open DSharpPlus.Interactivity
+open DSharpPlus.Interactivity.Extensions
+open DSharpPlus.Interactivity.Enums
+open DSharpPlus.Lavalink
+open DSharpPlus.Net
+open Microsoft.Extensions.Configuration
+open System
+open System.IO
+open System.Threading.Tasks
+open MusicBot.Cmd
 
 module Program =
-    open DSharpPlus
-    open DSharpPlus.CommandsNext
-    open DSharpPlus.Interactivity
-    open DSharpPlus.Interactivity.Extensions
-    open DSharpPlus.Interactivity.Enums
-    open DSharpPlus.Interactivity.EventHandling
-    open DSharpPlus.Lavalink
-    open DSharpPlus.Net
-    open Microsoft.Extensions.Configuration
-    open System
-    open System.IO
-    open System.Threading.Tasks
-    open MusicBot.Cmd
 
     let appConfig =
         ConfigurationBuilder()
@@ -30,7 +30,8 @@ module Program =
         config.Token <- appConfig.["Token"]
         config.TokenType <- TokenType.Bot
         config.Intents <-
-            DiscordIntents.AllUnprivileged + DiscordIntents.MessageContents
+            DiscordIntents.AllUnprivileged
+            + DiscordIntents.MessageContents
 
         // Set up the client commands
         let client = new DiscordClient(config)
@@ -43,6 +44,11 @@ module Program =
         commands.RegisterCommands<Music>()
         commands.RegisterCommands<Dice>()
         printfn "Commands registered"
+
+        // Set up slash commands
+        let slash = client.UseSlashCommands()
+        slash.RegisterCommands<Wizard>()
+        printfn "Slash commands registered"
 
         // Enables interactivity
         let interactionsConfig = InteractivityConfiguration()
