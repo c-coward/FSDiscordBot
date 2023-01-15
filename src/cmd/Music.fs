@@ -74,7 +74,7 @@ type Music () =
     [<Command "join">]
     [<Aliases ("j")>]
     [<Description "Join the current voice channel">]
-    member this.Join (ctx: CommandContext, [<RemainingText>] txt: string) : Task = task {
+    member this.Join (ctx: CommandContext, [<RemainingText>] txt: string): Task = task {
         let! inVC = this.botIsConnected ctx
 
         if inVC then
@@ -86,7 +86,7 @@ type Music () =
     [<Command "leave">]
     [<Aliases ("l", "quit", "die")>]
     [<Description "Leave the current voice channel">]
-    member this.Leave (ctx: CommandContext, [<RemainingText>] txt: string) : Task = task {
+    member this.Leave (ctx: CommandContext, [<RemainingText>] txt: string): Task = task {
         let userCh = ctx.Member.VoiceState.Channel
         let! bot = ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id)
         let botCh = bot.VoiceState.Channel
@@ -98,7 +98,7 @@ type Music () =
     [<Command "play">]
     [<Aliases ("p", "add")>]
     [<Description "Add a new song to the queue">]
-    member this.Play (ctx: CommandContext, [<RemainingText>] search: string) : Task = task {
+    member this.Play (ctx: CommandContext, [<RemainingText>] search: string): Task = task {
         let userVC = ctx.Member.VoiceState.Channel
         let! inVC = this.botIsConnected ctx
         let! conn = if not inVC then this.connectTo ctx
@@ -121,7 +121,7 @@ type Music () =
     [<Command "pause">]
     [<Aliases ("stop")>]
     [<Description "Pause the current track">]
-    member this.Pause (ctx: CommandContext, [<RemainingText>] txt: string) : Task = task {
+    member this.Pause (ctx: CommandContext, [<RemainingText>] txt: string): Task = task {
         let! conn = this.verifyConnection (ctx)
         if this.Players.GetCurrentSong(conn).IsSome then
             do! conn.PauseAsync()
@@ -130,7 +130,7 @@ type Music () =
 
     [<Command "resume">]
     [<Description "Resume the current track">]
-    member this.Resume (ctx: CommandContext, [<RemainingText>] txt: string) : Task = task {
+    member this.Resume (ctx: CommandContext, [<RemainingText>] txt: string): Task = task {
         let! conn = this.verifyConnection (ctx)
         if this.Players.GetCurrentSong(conn).IsSome then
             do! conn.ResumeAsync()
@@ -140,25 +140,26 @@ type Music () =
     [<Command "skip">]
     [<Aliases ("remove")>]
     [<Description "Skip the current track, or a specific track in the queue">]
-    member this.Skip (ctx: CommandContext, [<RemainingText>] txt: string) : Task = task {
+    member this.Skip (ctx: CommandContext, [<RemainingText>] txt: string): Task = task {
         let! conn = this.verifyConnection (ctx)
         if this.Players.GetCurrentSong(conn).IsSome then
             do! conn.StopAsync()
             do! ctx.Message.CreateReactionAsync(DiscordEmoji.FromUnicode("⏩"))
     }
-    member this.Remove (ctx: CommandContext, loc: int, [<RemainingText>] txt: string) : Task = task {
+    member this.Remove (ctx: CommandContext, loc: int,
+            [<RemainingText>] txt: string): Task = task {
         let! conn = this.verifyConnection (ctx)
         if loc = 1 then
             do! this.Skip(ctx, txt)
         else
             if this.Players.RemoveAt(conn, loc) then 
                 do! ctx.Message.CreateReactionAsync(DiscordEmoji.FromUnicode("⏩"))
-
     }
+
     [<Command "clear">]
     [<Aliases ("clr", "skipall")>]
     [<Description "Clears out the queue">]
-    member this.Clear (ctx: CommandContext, [<RemainingText>] txt: string) : Task = task {
+    member this.Clear (ctx: CommandContext, [<RemainingText>] txt: string): Task = task {
         let! conn = this.verifyConnection (ctx)
         this.Players.ClearQueue(conn)
         do! conn.StopAsync()
@@ -167,7 +168,7 @@ type Music () =
     [<Command "current">]
     [<Aliases ("curr", "now", "playing")>]
     [<Description "Get the currently playing track">]
-    member this.Current (ctx: CommandContext, [<RemainingText>] txt: string) : Task = task {
+    member this.Current (ctx: CommandContext, [<RemainingText>] txt: string): Task = task {
         let! conn = this.findConnection ctx
         let embed = DiscordEmbedBuilder()
         embed.Color <- DiscordColor.Purple
@@ -184,13 +185,14 @@ type Music () =
     [<Command "queue">]
     [<Aliases ("q", "list", "songs", "tracks")>]
     [<Description "Lists out the queue">]
-    member this.GetQueue (ctx: CommandContext, [<RemainingText>] txt: string) : Task = task {
+    member this.GetQueue (ctx: CommandContext, [<RemainingText>] txt: string): Task = task {
         let! conn = this.findConnection ctx
         let embed = this.Players.StringQueue(conn)
 
         if embed.Title <> null then
             let interactions = ctx.Client.GetInteractivity()
-            let pages = interactions.GeneratePagesInEmbed(embed.Description, SplitType.Line, embed)
+            let pages = interactions.GeneratePagesInEmbed(
+                embed.Description, SplitType.Line, embed)
             ctx.Channel.SendPaginatedMessageAsync(ctx.Member, pages) |> ignore
         else
             ctx.RespondAsync(embed) |> ignore

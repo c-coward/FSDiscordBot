@@ -48,7 +48,8 @@ module PlayerQueue =
             | None -> ()
         }
 
-        member this.UpdatePlayMessage (conn: LavalinkGuildConnection, msg: DiscordMessage, embed: DiscordEmbed) = task {
+        member this.UpdatePlayMessage (conn: LavalinkGuildConnection,
+                msg: DiscordMessage, embed: DiscordEmbed) = task {
             let player = this.Players.Item(conn.Guild.Id)
             let oldMsg = player.PlayMessage
 
@@ -60,7 +61,8 @@ module PlayerQueue =
             player.PlayMessage <- Some newMsg
         }
 
-        member this.UpdateQueueMessage (conn: LavalinkGuildConnection, msg: DiscordMessage, embed: DiscordEmbed) = task {
+        member this.UpdateQueueMessage (conn: LavalinkGuildConnection,
+                msg: DiscordMessage, embed: DiscordEmbed) = task {
             let player = this.Players.Item(conn.Guild.Id)
             let oldMsg = player.QueueMessage
 
@@ -136,11 +138,13 @@ module PlayerQueue =
             let queue = this.Players.GetValueOrDefault(conn.Guild.Id).Playlist
             if loc - 1 <= queue.Count && loc > 0 then
                 let newQueue = queue |> Seq.removeAt (loc - 1) |> Queue<Song>
-                this.Players.GetValueOrDefault(conn.Guild.Id).Playlist <- newQueue
+                this.Players.GetValueOrDefault(conn.Guild.Id).Playlist
+                    <- newQueue
                 true
             else false
         
-        member this.PlaybackStartedEvent : LavalinkGuildConnection -> EventArgs.TrackStartEventArgs -> Task = 
+        member this.PlaybackStartedEvent: LavalinkGuildConnection
+                -> EventArgs.TrackStartEventArgs -> Task = 
             fun (conn: LavalinkGuildConnection) (args: EventArgs.TrackStartEventArgs) ->
                 task {
                     let player = this.Players.Item(conn.Guild.Id)
@@ -154,7 +158,8 @@ module PlayerQueue =
                     do! this.UpdatePlayMessage(conn, song.Message, embed)
                 }
         
-        member this.PlaybackFinishedEvent : LavalinkGuildConnection -> EventArgs.TrackFinishEventArgs -> Task =
+        member this.PlaybackFinishedEvent: LavalinkGuildConnection
+                -> EventArgs.TrackFinishEventArgs -> Task =
             fun (conn: LavalinkGuildConnection) (args: EventArgs.TrackFinishEventArgs) ->
                 task {
                     this.AdvanceQueue(conn)

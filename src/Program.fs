@@ -29,7 +29,8 @@ module Program =
         let config = DiscordConfiguration()
         config.Token <- appConfig.["Token"]
         config.TokenType <- TokenType.Bot
-        config.Intents <- DiscordIntents.AllUnprivileged + DiscordIntents.MessageContents
+        config.Intents <-
+            DiscordIntents.AllUnprivileged + DiscordIntents.MessageContents
 
         // Set up the client commands
         let client = new DiscordClient(config)
@@ -46,7 +47,8 @@ module Program =
         // Enables interactivity
         let interactionsConfig = InteractivityConfiguration()
         interactionsConfig.PollBehaviour <- PollBehaviour.KeepEmojis
-        interactionsConfig.ButtonBehavior <- ButtonPaginationBehavior.DeleteMessage
+        interactionsConfig.ButtonBehavior <-
+            ButtonPaginationBehavior.DeleteMessage
         interactionsConfig.AckPaginationButtons <- true
         interactionsConfig.Timeout <- TimeSpan.FromSeconds(120)
 
